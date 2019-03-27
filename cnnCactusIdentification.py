@@ -9,7 +9,7 @@ import numpy as np
 
 
 IMG_SIZE = 32
-BATCH_SIZE = 1
+BATCH_SIZE = 5
 
 train_on_gpu = False 
 
@@ -24,7 +24,6 @@ train_dataset, test_dataset, valid_dataset = torch.utils.data.random_split(datas
 dataloader = [torch.utils.data.DataLoader(x, batch_size = BATCH_SIZE, shuffle = False, num_workers = 4) 
         for x in [train_dataset, valid_dataset, test_dataset]]
 
-print('There are ', train_size, 'train data, ', valid_size, 'valid data and ',test_size, ' test data' )
 
 class cnnCactusIdentification(nn.Module):
     def __init__(self):
@@ -59,7 +58,7 @@ optimizer = optim.SGD(model.parameters(), lr=0.01)
 
 if __name__ == '__main__':
     min_valid_loss = np.Inf
-    for epoch in range(1):
+    for epoch in range(10):
         train_loss = 0
         valid_loss = 0
         model.train()
