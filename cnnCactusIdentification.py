@@ -13,16 +13,15 @@ BATCH_SIZE = 5
 
 train_on_gpu = False 
 
-dataset = imageDataset('processed_data.csv', torchvision.transforms.ToTensor())
+dataset = imageDataset('processed_train_data.csv', torchvision.transforms.ToTensor())
 
-train_size = int(0.6 * len(dataset))
-valid_size = int(0.2 * len(dataset))
-test_size = len(dataset) -train_size - valid_size
+train_size = int(0.8 * len(dataset))
+valid_size = len(dataset) - train_size
 
-train_dataset, test_dataset, valid_dataset = torch.utils.data.random_split(dataset, [train_size, valid_size, test_size])
+train_dataset, valid_dataset = torch.utils.data.random_split(dataset, [train_size, valid_size])
 
-dataloader = [torch.utils.data.DataLoader(x, batch_size = BATCH_SIZE, shuffle = False, num_workers = 4) 
-        for x in [train_dataset, valid_dataset, test_dataset]]
+dataloader = [torch.utils.data.DataLoader(x, batch_size = BATCH_SIZE, shuffle = True, num_workers = 4) 
+        for x in [train_dataset, valid_dataset]]
 
 
 class cnnCactusIdentification(nn.Module):
@@ -87,25 +86,4 @@ if __name__ == '__main__':
             print('valid loss ',valid_loss,' is les than min valid loss: ', min_valid_loss, ', save model')
             torch.save(model.state_dict(), 'cnnCactusidnetification.pt')
             min_valid_loss = valid_loss
-    
-    
-    
-    model.load_state_dict(torch.load('cnnCactusidnetification.pt'))
-    model.eval()
-    test_loss = 0
-    total = 0
-    correct = 0
-    for batch_idx, (img, target) in enumerate(dataloader[2]):
-        model.zero_grad()
-        if train_on_gpu:
-            img, target = img.cuda(), target.cuda()
-        target_space = model(img)
-        loss = loss_function(target_space, target)
-        test_loss += loss.item()
-        _, idx = torch.max(target_space, 1)
-        prediction = idx.tolist()[0]
-        if(prediction == target):
-            correct += 1
-        total += 1
-    print("correct accuray is ", correct/total, " ,total:", total, " , correct:", correct)
 
