@@ -43,9 +43,7 @@ class cnnCactusIdentification(nn.Module):
 
         conv2 = F.relu(self.conv_layer2(pool1))
         pool2 = self.pool_layer2(conv2)
-
-
-        fc1 = self.fc_layer1(pool2.view(BATCH_SIZE,-1))
+        fc1 = self.fc_layer1(pool2.view(img.size(0),-1))
         fc2 = self.fc_layer2(fc1)
         return F.log_softmax(fc2, dim = 1)
        
