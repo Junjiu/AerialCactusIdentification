@@ -4,12 +4,12 @@ import pandas as pd
 from PIL import Image
 from sklearn.preprocessing import StandardScaler
 class imageDataset(torch.utils.data.Dataset):
+    minmax = StandardScaler()
     def __init__(self, text_file, transform):
         data_frame = pd.read_csv('data/' + text_file)
         self.image_names = data_frame['id'].values
         self.targets = data_frame['has_cactus'].values
         self.transform = transform
-        self.minmax = StandardScaler()
     
     def __len__(self):
         return len(self.targets)

@@ -13,18 +13,19 @@ BATCH_SIZE = 1
 
 train_on_gpu = False 
 
-dataset = imageDataset('train.csv', torchvision.transforms.ToTensor())
+dataset = imageDataset('processed_data.csv', torchvision.transforms.ToTensor())
 
 train_size = int(0.6 * len(dataset))
 valid_size = int(0.2 * len(dataset))
-test_size = len(dataset) -train_size -valid_size
+test_size = len(dataset) -train_size - valid_size
 
 train_dataset, test_dataset, valid_dataset = torch.utils.data.random_split(dataset, [train_size, valid_size, test_size])
 
 dataloader = [torch.utils.data.DataLoader(x, batch_size = BATCH_SIZE, shuffle = False, num_workers = 4) 
-        for x in [train_dataset, test_dataset, valid_size]]
+        for x in [train_dataset, valid_dataset, test_dataset]]
 
 print('There are ', train_size, 'train data, ', valid_size, 'valid data and ',test_size, ' test data' )
+
 class cnnCactusIdentification(nn.Module):
     def __init__(self):
         super(cnnCactusIdentification, self).__init__()
@@ -58,7 +59,7 @@ optimizer = optim.SGD(model.parameters(), lr=0.01)
 
 if __name__ == '__main__':
     min_valid_loss = np.Inf
-    for epoch in range(10):
+    for epoch in range(1):
         train_loss = 0
         valid_loss = 0
         model.train()
@@ -71,6 +72,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
+
         
         model.eval()
         for batch_idx, (img, target) in enumerate(dataloader[1]):
@@ -80,6 +82,7 @@ if __name__ == '__main__':
             target_space = model(img)
             loss = loss_function(target_space, target)
             valid_loss += loss.item()
+
 
         
         print('Epoch ', epoch, 'train loss is  ', train_loss, 'valid lostt is', valid_loss)
@@ -102,10 +105,9 @@ if __name__ == '__main__':
         target_space = model(img)
         loss = loss_function(target_space, target)
         test_loss += loss.item()
-        _, idx = torch.max(tag_scores, 1)
+        _, idx = torch.max(target_space, 1)
         prediction = idx.tolist()[0]
-        true_value = test_batch[1][0].tolist()[0]
-        if(prediction == true_value):
+        if(prediction == target):
             correct += 1
         total += 1
     print("correct accuray is ", correct/total, " ,total:", total, " , correct:", correct)
