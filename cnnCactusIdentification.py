@@ -55,7 +55,7 @@ optimizer = optim.SGD(model.parameters(), lr=0.01)
 
 if __name__ == '__main__':
     min_valid_loss = np.Inf
-    for epoch in range(10):
+    for epoch in range(100):
         train_loss = 0
         valid_loss = 0
         model.train()
