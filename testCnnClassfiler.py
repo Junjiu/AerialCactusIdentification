@@ -43,17 +43,18 @@ model.eval()
 test_loss = 0
 total = 0
 correct = 0
-for batch_idx, (img, target) in enumerate(dataloader):
-    model.zero_grad()
-    if train_on_gpu:
-        img, target = img.cuda(), target.cuda()
-    target_space = model(img)
-    loss = loss_function(target_space, target)
-    test_loss += loss.item()
-    _, idx = torch.max(target_space, 1)
-    prediction = idx.tolist()[0]
-    if(prediction == target):
-        correct += 1
-    total += 1
-print("correct accuray is ", correct/total, " ,total:", total, " , correct:", correct)
+if __name__ == '__main__':
+    for batch_idx, (img, target) in enumerate(dataloader):
+        model.zero_grad()
+        if train_on_gpu:
+            img, target = img.cuda(), target.cuda()
+        target_space = model(img)
+        loss = loss_function(target_space, target)
+        test_loss += loss.item()
+        _, idx = torch.max(target_space, 1)
+        prediction = idx.tolist()[0]
+        if(prediction == target):
+            correct += 1
+        total += 1
+    print("correct accuray is ", correct/total, " ,total:", total, " , correct:", correct)
 
