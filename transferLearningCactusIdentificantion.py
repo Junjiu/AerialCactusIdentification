@@ -6,14 +6,18 @@ import torch.nn.functional as F
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+import torchvision.models as models
+from torchvision import datasets, models, transforms
+import time
 
 
 IMG_SIZE = 32
-BATCH_SIZE = 5
+BATCH_SIZE = 128
 
-train_on_gpu = False 
+train_on_gpu = torch.cuda.is_available() 
 
-dataset = imageDataset('processed_train_data.csv', torchvision.transforms.ToTensor())
+dataset = imageDataset('processed_train_data.csv',
+              [transforms.ToTensor()])
 
 train_size = int(0.8 * len(dataset))
 valid_size = len(dataset) - train_size
@@ -24,58 +28,46 @@ dataloader = [torch.utils.data.DataLoader(x, batch_size = BATCH_SIZE, shuffle = 
         for x in [train_dataset, valid_dataset]]
 
 
-class cnnCactusIdentification(nn.Module):
-    def __init__(self):
-        super(cnnCactusIdentification, self).__init__()
-        self.conv_layer1 = torch.nn.Conv2d(3, 64, 2)
-        self.pool_layer1 = nn.MaxPool2d(3)
 
-        self.conv_layer2 = torch.nn.Conv2d(64, 32, 2)
-        self.pool_layer2 = nn.MaxPool2d(3)
-
-        self.fc_layer1 = nn.Linear(288, 64)
-        self.fc_layer2 = nn.Linear(64, 2)
-
-    def forward(self, img):
-        conv1 = F.relu(self.conv_layer1(img.float()))
-        pool1 = self.pool_layer1(conv1)
-
-        conv2 = F.relu(self.conv_layer2(pool1))
-        pool2 = self.pool_layer2(conv2)
-        fc1 = self.fc_layer1(pool2.view(img.size(0),-1))
-        fc2 = self.fc_layer2(fc1)
-        return fc2
        
 
-model = cnnCactusIdentification()
+model_ft = models.resnet18(pretrained = True)
+num_ftrs = model_ft.fc.in_features
+model_ft.fc = nn.Linear(num_ftrs, 2)
 if train_on_gpu:
-    model.cuda()
-loss_function = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.01)
+    model_ft.cuda()
 
+
+loss_function = nn.CrossEntropyLoss()
+
+optimizer = optim.Adam(model_ft.parameters(), lr=0.01 )
+
+start_time = time.time()
 if __name__ == '__main__':
     min_valid_loss = np.Inf
     for epoch in range(10):
         train_loss = 0
         valid_loss = 0
-        model.train()
+        model_ft.train()
         for batch_idx, (img, target) in enumerate(dataloader[0]):
-            model.zero_grad()
+            model_ft.zero_grad()
             if train_on_gpu:
                 img, target = img.cuda(), target.cuda()
-            target_space = model(img)
+            target_space = model_ft(img.float())
             loss = loss_function(target_space, target)
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
+            if batch_idx % 2 == 0:
+                print('trained with ', batch_idx, 'batch,  time cost is', time.time()-start_time)
 
         
-        model.eval()
+        model_ft.eval()
         for batch_idx, (img, target) in enumerate(dataloader[1]):
-            model.zero_grad()
+            model_ft.zero_grad()
             if train_on_gpu:
                 img, target = img.cuda(), target.cuda()
-            target_space = model(img)
+            target_space = model_ft(img.float(0))
             loss = loss_function(target_space, target)
             valid_loss += loss.item()
 
@@ -84,6 +76,6 @@ if __name__ == '__main__':
         print('Epoch ', epoch, 'train loss is  ', train_loss, 'valid lostt is', valid_loss)
         if valid_loss < min_valid_loss:
             print('valid loss ',valid_loss,' is les than min valid loss: ', min_valid_loss, ', save model')
-            torch.save(model.state_dict(), 'cnnCactusidnetification.pt')
+            torch.save(model_ft.state_dict(), 'cnnCactusidnetification.pt')
             min_valid_loss = valid_loss
 
